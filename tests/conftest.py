@@ -4,7 +4,7 @@ Pytest Fixtures.
 import pytest
 from starlette.testclient import TestClient
 
-from template.main import app
+from heimdallr.main import app
 
 
 @pytest.fixture(name="test_client")

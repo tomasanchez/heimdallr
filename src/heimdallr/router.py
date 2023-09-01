@@ -7,7 +7,7 @@ Resources:
 """
 from fastapi import APIRouter
 
-from template.entrypoint import monitor
+from heimdallr.entrypoint import monitor
 
 api_v1_prefix: str = "/api/v1"
 

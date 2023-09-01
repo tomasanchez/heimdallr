@@ -3,21 +3,20 @@ Applicant Main File.
 """
 from fastapi import FastAPI
 
-from template.asgi import get_application
+from heimdallr.asgi import get_application
 
 app: FastAPI = get_application()
-
 
 if __name__ == "__main__":
     # pylint: disable=wrong-import-position
     import uvicorn
 
-    import template.settings.uvicorn_settings
+    import heimdallr.settings.uvicorn_settings
 
-    settings = template.UvicornSettings()
+    settings = heimdallr.UvicornSettings()
 
     uvicorn.run(
-        "template.main:app",
+        "heimdallr.main:app",
         host=settings.HOST,
         port=settings.PORT,
         log_level=settings.LOG_LEVEL,

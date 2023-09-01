@@ -1,7 +1,7 @@
 """
 Formatting utilities tests.
 """
-from template.utils.formatting import to_camel
+from heimdallr.utils.formatting import to_camel
 
 
 class TestFormatting:

@@ -4,8 +4,8 @@ Test Cases for Monitor Entrypoint.
 import pytest
 from fastapi import status
 
-from template.domain.events.monitor import LivenessProbed, ReadinessProbed
-from template.domain.schemas import ResponseModel
+from heimdallr.domain.events.monitor import LivenessProbed, ReadinessProbed
+from heimdallr.domain.schemas import ResponseModel
 
 
 class TestMonitorEntryPoint:
