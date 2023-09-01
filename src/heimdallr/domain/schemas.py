@@ -30,17 +30,17 @@ class CamelCaseModel(BaseModel):
     )
 
     def model_dump(
-            self,
-            *,
-            mode: Literal["json", "python"] | str = "json",
-            include=None,
-            exclude=None,
-            by_alias: bool = True,
-            exclude_unset: bool = True,
-            exclude_defaults: bool = False,
-            exclude_none: bool = True,
-            round_trip: bool = False,
-            warnings: bool = True,
+        self,
+        *,
+        mode: Literal["json", "python"] | str = "json",
+        include=None,
+        exclude=None,
+        by_alias: bool = True,
+        exclude_unset: bool = True,
+        exclude_defaults: bool = False,
+        exclude_none: bool = True,
+        round_trip: bool = False,
+        warnings: bool = True,
     ) -> dict[str, Any]:
         return super().model_dump(
             mode=mode,

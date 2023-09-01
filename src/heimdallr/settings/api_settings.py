@@ -65,8 +65,10 @@ class ApplicationSettings(BaseSettings):
 
     DEBUG: bool = True
     PROJECT_NAME: str = "Heimdallr"
-    PROJECT_DESCRIPTION: str = ("A powerful and intelligent plagiarism detection system designed to uphold academic "
-                                "integrity and ensure the authenticity of written works.")
+    PROJECT_DESCRIPTION: str = (
+        "A powerful and intelligent plagiarism detection system designed to uphold academic "
+        "integrity and ensure the authenticity of written works."
+    )
     PROJECT_LICENSE: LicenseInfo | None = LicenseInfo(name="MIT", url="https://mit-license.org/")
     PROJECT_CONTACT: ContactInfo | None = ContactInfo(
         name="Tom Sanchez", url="https://tomsanchez.com.ar", email="info@tomsanchez.com.ar"

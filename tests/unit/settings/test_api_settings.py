@@ -3,7 +3,11 @@ Test suite for API Settings
 """
 import pytest
 
-from heimdallr.settings.api_settings import ApplicationSettings, ContactInfo, LicenseInfo
+from heimdallr.settings.api_settings import (
+    ApplicationSettings,
+    ContactInfo,
+    LicenseInfo,
+)
 from heimdallr.version import __version__
 
 
