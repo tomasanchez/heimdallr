@@ -11,13 +11,14 @@ if __name__ == "__main__":
     # pylint: disable=wrong-import-position
     import uvicorn
 
-    import heimdallr.settings.uvicorn_settings
+    # pylint: disable=ungrouped-imports
+    from heimdallr.settings import uvicorn_settings
 
-    settings = heimdallr.UvicornSettings()
+    settings = uvicorn_settings.UvicornSettings()
 
     uvicorn.run(
         "heimdallr.main:app",
-        host=settings.HOST,
+        host=str(settings.HOST),
         port=settings.PORT,
         log_level=settings.LOG_LEVEL,
         reload=settings.RELOAD,
