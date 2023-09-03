@@ -12,6 +12,8 @@ fastapi = "^0.103.0"
 uvicorn = "^0.23.2"
 pydantic-settings = "^2.0.2"
 pydantic = { extras = ["email"], version = "^2.1.1" }
+spacy = "^3.6.1"
+pymupdf = "^1.23.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -25,6 +27,8 @@ mypy = "^1.4.1"
 flake8 = "^6.1.0"
 httpx = "^0.24.1"
 pytest-cov = "^4.1.0"
+notebook = "^7.0.3"
+ipykernel = "^6.25.1"
 
 [build-system]
 requires = ["poetry-core"]
