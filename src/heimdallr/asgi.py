@@ -61,8 +61,15 @@ def get_application() -> FastAPI:
 
     settings = ApplicationSettings()
 
-    license_info: dict[str, str] = settings.PROJECT_LICENSE.model_dump(mode="json")
-    contact_info: dict[str, str] = settings.PROJECT_CONTACT.model_dump(mode="json")
+    license_info: dict[str, str] | None = None
+
+    if settings.PROJECT_LICENSE:
+        license_info = settings.PROJECT_LICENSE.model_dump(mode="json")
+
+    contact_info: dict[str, str] | None = None
+
+    if settings.PROJECT_CONTACT:
+        contact_info = settings.PROJECT_CONTACT.model_dump(mode="json")
 
     app = FastAPI(
         title=settings.PROJECT_NAME,
