@@ -130,3 +130,17 @@ class TestTextNormalizing:
         sentence = line_0 + line_1 + line_2
 
         assert normalize_sentence(sentence) != sentence
+
+    def test_normalize_sentence_does_not_include_empty_line(self):
+        """
+        GIVEN a sentence that has been split into multiple lines
+        WHEN the sentence is normalized
+        THEN assert the sentence is normalized correctly
+        """
+        line_0 = "This is a line."
+        line_1 = "\n  \n"
+        line_2 = "This is another line."
+
+        sentence = line_0 + line_1 + line_2
+
+        assert normalize_sentence(sentence) == "This is a line.\nThis is another line."
