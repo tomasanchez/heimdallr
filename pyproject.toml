@@ -41,7 +41,7 @@ include = '\.pyi?$'
 
 [tool.coverage.run]
 branch = true
-omit = ['tests/*', 'src/template/asgi.py', 'src/**/__init__.py']
+omit = ['tests/*', 'src/heimdallr/asgi.py', 'src/**/__init__.py']
 
 [tool.coverage.report]
 show_missing = true
