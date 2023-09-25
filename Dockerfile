@@ -27,4 +27,4 @@ RUN pip install --disable-pip-version-check "poetry==$POETRY_VERSION"
 RUN poetry config virtualenvs.create false \
     && poetry install --only main
 
-CMD ["poetry", "run", "python","-m", "template.main"]
+CMD ["poetry", "run", "python","-m", "heimdallr.main"]
