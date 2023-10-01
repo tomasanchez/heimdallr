@@ -85,6 +85,7 @@ disable = [
     "no-name-in-module",
     "no-self-argument",
     "missing-class-docstring",
+    'global-statement',
 ]
 
 [tool.pylint.reports]

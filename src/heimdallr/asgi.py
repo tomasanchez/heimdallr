@@ -6,10 +6,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+from heimdallr.dependencies import get_nlp
 from heimdallr.router import api_router_v1, root_router
 from heimdallr.settings.api_settings import ApplicationSettings
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
 async def on_startup():
@@ -20,6 +21,8 @@ async def on_startup():
         1. https://fastapi.tiangolo.com/advanced/events/#startup-event
     """
     log.debug("Execute FastAPI startup event handler.")
+    nlp = get_nlp()
+    log.debug("Natural Language Processor loaded", extra={"nlp": nlp.meta})
 
 
 async def on_shutdown():
