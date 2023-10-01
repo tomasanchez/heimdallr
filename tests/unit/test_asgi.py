@@ -1,7 +1,9 @@
 """
 Test suite for ASGI Application
 """
-from heimdallr.asgi import get_application
+import pytest
+
+from heimdallr.asgi import get_application, lifespan
 
 
 class TestASGI:
@@ -16,3 +18,19 @@ class TestASGI:
         THEN the application is returned
         """
         assert get_application() is not None
+
+    @pytest.mark.asyncio
+    async def test_lifespan(self):
+        """
+        GIVEN a FastAPI application
+        WHEN the lifespan is called
+        THEN the NLP is initialized
+        """
+
+        # given
+        app = get_application()
+
+        # when
+        async with lifespan(app=app):
+            # then does not fail
+            pass
