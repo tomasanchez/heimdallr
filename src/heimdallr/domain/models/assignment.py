@@ -39,3 +39,25 @@ class Assignment(BaseDocument):
     author: str = "Unknown"
     content: list[Page]
     date: datetime.date | None = None
+
+    def __eq__(self, other) -> bool:
+        """
+        Compares two assignments.
+
+        Args:
+            other:
+
+        Returns:
+            true when the same author submits the same content.
+
+        """
+        if other is None:
+            return False
+
+        if not isinstance(other, Assignment):
+            return False
+
+        if self.author != other.author:
+            return False
+
+        return self.content == other.content
