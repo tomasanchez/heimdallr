@@ -1,4 +1,4 @@
-FROM python:3.11.4-slim as development_build
+FROM python:3.11.4-slim AS development_build
 
 ARG APP_DIR=/app
 
@@ -25,6 +25,7 @@ RUN pip install --disable-pip-version-check "poetry==$POETRY_VERSION"
 
 # Project initialization:
 RUN poetry config virtualenvs.create false \
-    && poetry install --only main
+    && poetry install --only main \
+    && python -m spacy download es_core_news_lg
 
 CMD ["poetry", "run", "python","-m", "heimdallr.main"]
