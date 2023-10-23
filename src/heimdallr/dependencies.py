@@ -8,7 +8,10 @@ from fastapi import Depends
 
 from heimdallr.adapters.assignment_reader import AssignmentReader, SpacyAssignmentReader
 from heimdallr.adapters.repository import AsyncAssignmentRepository
-from heimdallr.service_layer.assignment_verifier import AssignmentVerifier, SpacyAssignmentVerifier
+from heimdallr.service_layer.assignment_verifier import (
+    AssignmentVerifier,
+    SpacyAssignmentVerifier,
+)
 from tests.mocks import AsyncInMemAssignmentRepository
 
 NLP_SPANISH = "es_core_news_lg"

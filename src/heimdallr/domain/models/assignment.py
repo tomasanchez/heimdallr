@@ -4,7 +4,7 @@ Assignment.
 import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, UUID4
+from pydantic import UUID4, BaseModel, ConfigDict, Field
 
 Sentence = str
 
