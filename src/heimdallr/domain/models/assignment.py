@@ -4,7 +4,7 @@ Assignment.
 import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, UUID4
 
 Sentence = str
 
@@ -24,6 +24,38 @@ class BaseDocument(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
 
+class ComparisonResult(BaseModel):
+    """
+    A comparison result.
+
+    Attributes:
+        present (str): stored sentence.
+        compared (str): assignment sentence.
+        plagiarism (float): plagiarism percentage.
+    """
+
+    present: str
+    compared: str
+    plagiarism: float
+
+
+class AssignmentVerification(BaseModel):
+    """
+    A comparison result.
+
+    Attributes:
+        id (UUID): The compared Assignment ID.
+        author (str): The compared Assignment Author.
+        plagiarism (float): plagiarism percentage.
+        similarities (list[ComparisonResult]): The comparison results.
+    """
+
+    id: UUID4
+    author: str | None = "Unknown"
+    plagiarism: float
+    similarities: list[ComparisonResult] = []
+
+
 class Assignment(BaseDocument):
     """
     Represents an Academic Assignment.
@@ -39,6 +71,7 @@ class Assignment(BaseDocument):
     author: str = "Unknown"
     content: list[Page]
     date: datetime.date | None = None
+    similarities: list[AssignmentVerification] | None = None
 
     def __eq__(self, other) -> bool:
         """
