@@ -8,7 +8,7 @@ from typing import BinaryIO
 import fitz
 from spacy import Language
 
-from heimdallr.domain.models.assignment import Assignment, Page
+from heimdallr.domain.models.assignment import Assignment
 from heimdallr.utils.content_type import APPLICATION_PDF
 from heimdallr.utils.formatting import contains_letters_or_numbers, normalize_sentence
 
@@ -86,13 +86,15 @@ class SpacyAssignmentReader(AssignmentReader):
 
         file_document = fitz.Document(**args)
 
-        pages: list[Page] = [self._parse_page(page.get_textpage().extractText()) for page in file_document]
+        pages: list[list[str]] = [self._parse_page(page.get_textpage().extractText()) for page in file_document]
 
         author = self._find_out_author(file_document[0].get_textpage().extractText())
 
         file_document.close()
 
-        return Assignment(content=pages, date=datetime.date.today(), author=author)
+        return Assignment(
+            content=[sentence for page in pages for sentence in page], date=datetime.date.today(), author=author
+        )
 
     def _parse_page(self, page_text: str) -> list[str]:
         """
