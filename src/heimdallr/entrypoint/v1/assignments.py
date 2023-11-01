@@ -4,9 +4,16 @@ Assignments Entry Point.
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Path, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    HTTPException,
+    Path,
+    UploadFile,
+    status,
+)
 from pydantic import UUID4
-from starlette.background import BackgroundTasks
 
 from heimdallr.dependencies import (
     AssignmentRepositoryDependency,
