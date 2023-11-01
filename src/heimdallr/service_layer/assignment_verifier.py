@@ -3,7 +3,6 @@ Assignment Verifier Service
 """
 import abc
 import concurrent.futures
-from itertools import chain
 
 from spacy import Language
 
@@ -103,16 +102,6 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
                 if result.similarities:
                     comparisons.append(result)
 
-        # for assignment in assignments:
-        #     # when an assignment is already persisted, do not compare
-        #     if assignment == entry:
-        #         return AssignmentVerified(id=assignment.id, author=assignment.author)
-        #
-        #     result = self.compare_assignments(assignment=assignment, entry=entry)
-        #
-        #     if result.similarities:
-        #         comparisons.append(result)
-
         persisted = await self.repository.save(entry)
 
         return AssignmentVerified(
@@ -135,24 +124,21 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         """
         comparison_results: set[SentenceCompared] = set()
 
-        # flatten the content of the assignment
-        sentences: list[str] = list(chain.from_iterable(assignment.content))
-        entry_sentences: list[str] = list(chain.from_iterable(entry.content))
-
         # find the first plagiarized match for each entry sentence
-        for entry_sentence in entry_sentences:
-            for sentence in sentences:
+        for entry_sentence in entry.content:
+            for sentence in assignment.content:
                 result = self.compare_sentence(sentence=sentence, entry_sentence=entry_sentence)
                 if result.plagiarism >= self.similarity_threshold:
                     comparison_results.add(self.compare_sentence(sentence=sentence, entry_sentence=entry_sentence))
                     break
 
+        plagiarism = sum(result.plagiarism for result in comparison_results) / len(entry.content)
+
         return AssignmentCompared(
             id=assignment.id,
             author=assignment.author,
             similarities=list(comparison_results),
-            # pylint: disable=consider-using-generator
-            plagiarism=sum([result.plagiarism for result in comparison_results]) / len(entry_sentences),
+            plagiarism=plagiarism,
         )
 
     def compare_sentence(self, sentence: str, entry_sentence: str) -> SentenceCompared:
