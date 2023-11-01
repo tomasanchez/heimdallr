@@ -26,6 +26,6 @@ RUN pip install --disable-pip-version-check "poetry==$POETRY_VERSION"
 # Project initialization:
 RUN poetry config virtualenvs.create false \
     && poetry install --only main \
-    && python -m spacy download es_core_news_lg
+    && spacy download es_core_news_lg
 
 CMD ["poetry", "run", "python","-m", "heimdallr.main"]
