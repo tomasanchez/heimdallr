@@ -20,7 +20,7 @@ dist-clean: clean ## Removes all build and test artifacts and virtual environmen
 .PHONY: build
 build: ## Creates a virtual environment and installs development dependencies
 	poetry install
-	poetry spacy download es_core_news_lg
+	poetry run spacy download es_core_news_lg
 
 .PHONY: test
 test: ## Executes tests cases
