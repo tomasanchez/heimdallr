@@ -1,6 +1,8 @@
 """
 Assignments events.
 """
+from uuid import uuid4
+
 from pydantic import UUID4, Field
 
 from heimdallr.domain.schemas import CamelCaseModel
@@ -46,7 +48,7 @@ class AssignmentVerified(CamelCaseModel):
     id: UUID4 = Field(description="Assignment's ID.", example="123e4567-e89b-12d3-a456-426614174000")
     title: str | None = Field(description="Assignment's title.", example="NLP Assignment", default="Unknown")
     author: str | None = Field(description="Name of the responsible person", example="John Doe", default="Unknown")
-    similarities: list[AssignmentCompared] = Field(description="Plagiarism results.", example=[], default_factory=list)
+    similarities: list[AssignmentCompared] | None = Field(description="Plagiarism results.", example=[], default=None)
 
 
 class AssignmentStored(CamelCaseModel):
@@ -57,4 +59,13 @@ class AssignmentStored(CamelCaseModel):
     id: UUID4 = Field(description="Assignment's ID.", example="123e4567-e89b-12d3-a456-426614174000")
     title: str | None = Field(description="Assignment's title.", example="NLP Assignment", default="Unknown")
     author: str | None = Field(description="Name of the responsible person", example="John Doe", default="Unknown")
-    content: list[list[str]] = Field(description="Assignment's content.", example=[["This is a sentence."]])
+    content: list[str] = Field(description="Assignment's content.", example=[["This is a sentence."]])
+
+
+class JobScheduled(CamelCaseModel):
+    """
+    Job scheduled event.
+    """
+
+    id: UUID4 = Field(description="Job's ID.", example="123e4567-e89b-12d3-a466-426614174000", default_factory=uuid4)
+    message: str = Field(description="Job's message.", example="Job scheduled.")

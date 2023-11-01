@@ -14,7 +14,7 @@ from heimdallr.domain.events.assignments import (
     AssignmentVerified,
     SentenceCompared,
 )
-from heimdallr.domain.models.assignment import Assignment
+from heimdallr.domain.models.assignment import Assignment, AssignmentVerification
 
 
 class AssignmentVerifier(abc.ABC):
@@ -88,8 +88,9 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         entry = self.reader.read(command.file_ref, command.file_type)
 
         if not command.verify or not entry.content:
-            return AssignmentVerified(id=entry.id, author=entry.author)
+            return AssignmentVerified(id=command.id, author=entry.author)
 
+        entry.id = command.id
         assignments: list[Assignment] = await self.repository.find_all()
         comparisons: list[AssignmentCompared] = []
 
@@ -101,6 +102,10 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
                 result: AssignmentCompared = future.result()
                 if result.similarities:
                     comparisons.append(result)
+
+        # map the comparison results to the AssignmentVerification model
+        verifications = [AssignmentVerification(**comparison.model_dump()) for comparison in comparisons]
+        entry.similarities = verifications
 
         persisted = await self.repository.save(entry)
 

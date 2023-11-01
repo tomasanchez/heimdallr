@@ -1,6 +1,10 @@
 """
 Mocks Class for Testing
 """
+# mypy: ignore-errors
+
+from uuid import UUID
+
 from heimdallr.adapters.repository import (
     AsyncAssignmentRepository,
     AsyncRepository,
@@ -16,7 +20,7 @@ class InMemRepository(WriteOnlyRepository, ReadOnlyRepository):
     """
 
     def __init__(self, data: dict | None = None):
-        self._data: dict[T] = data or {}
+        self._data: dict[UUID, T] = data or {}
 
     def delete(self, entity: T, *args, **kwargs) -> None:
         if entity.id in self._data:
@@ -39,7 +43,7 @@ class AsyncInMemRepository(AsyncRepository):
     """
 
     def __init__(self, data: dict | None = None):
-        self._data: dict[T] = data or {}
+        self._data: dict[UUID, T] = data or {}
 
     async def delete(self, entity: T, *args, **kwargs) -> None:
         if entity.id in self._data:
