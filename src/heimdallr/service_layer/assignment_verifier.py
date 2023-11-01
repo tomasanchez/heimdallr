@@ -127,9 +127,9 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         # find the first plagiarized match for each entry sentence
         for entry_sentence in entry.content:
             for sentence in assignment.content:
-                result = self.compare_sentence(sentence=sentence, entry_sentence=entry_sentence)
+                result: SentenceCompared = self.compare_sentence(sentence=sentence, entry_sentence=entry_sentence)
                 if result.plagiarism >= self.similarity_threshold:
-                    comparison_results.add(self.compare_sentence(sentence=sentence, entry_sentence=entry_sentence))
+                    comparison_results.add(result)
                     break
 
         plagiarism = sum(result.plagiarism for result in comparison_results) / len(entry.content)

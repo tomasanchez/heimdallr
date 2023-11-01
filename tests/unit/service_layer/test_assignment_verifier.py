@@ -6,21 +6,25 @@ from heimdallr.service_layer.assignment_verifier import AssignmentVerifier
 
 
 class TestAssignmentVerifier:
+    SENTENCE = "This is a sentence."
+
     def test_compare_same_sentence(self, assignment_verifier: AssignmentVerifier):
         """
         GIVEN two sentences
         WHEN the verifier compares them
         THEN it should return a SentenceCompared event.
         """
-        # given
-        sentence = "This is a sentence."
+        # given a sentence
 
         # when
-        result = assignment_verifier.compare_sentence(sentence, entry_sentence=sentence)
+        result = assignment_verifier.compare_sentence(
+            self.SENTENCE,
+            entry_sentence=self.SENTENCE,
+        )
 
         # then
-        assert result.present == sentence
-        assert result.compared == sentence
+        assert result.present == self.SENTENCE
+        assert result.compared == self.SENTENCE
         assert result.plagiarism == 1.0
 
     def test_compare_different_sentence(self, assignment_verifier: AssignmentVerifier):
@@ -48,7 +52,7 @@ class TestAssignmentVerifier:
         THEN it should return a AssignmentCompared event.
         """
         # given
-        assignment = Assignment(content=[["This is a sentence."]])
+        assignment = Assignment(content=[self.SENTENCE])
         entry = assignment.model_copy()
 
         # when

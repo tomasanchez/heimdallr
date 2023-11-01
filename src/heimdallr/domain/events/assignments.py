@@ -15,6 +15,17 @@ class SentenceCompared(CamelCaseModel):
     compared: str = Field(description="Compared sentence.", example="This is the new sentences evaluated.")
     plagiarism: float = Field(description="Plagiarism percentage.", example=0.0, default=0.0)
 
+    def __hash__(self):
+        return hash((self.present, self.compared, self.plagiarism))
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, SentenceCompared)
+            and self.present == other.present
+            and self.compared == other.compared
+            and self.plagiarism == other.plagiarism
+        )
+
 
 class AssignmentCompared(CamelCaseModel):
     """
