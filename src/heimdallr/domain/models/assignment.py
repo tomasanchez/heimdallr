@@ -6,10 +6,6 @@ from uuid import UUID, uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 
-Sentence = str
-
-Page = list[Sentence]
-
 
 class BaseDocument(BaseModel):
     """
@@ -69,7 +65,7 @@ class Assignment(BaseDocument):
 
     title: str = "Unknown"
     author: str = "Unknown"
-    content: list[Page]
+    content: list[str]
     date: datetime.date | None = None
     similarities: list[AssignmentVerification] | None = None
 
