@@ -1,11 +1,18 @@
+# type: ignore
+
+"""
+Repositories based on Motor engine for MongoDB.
+"""
+
+
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from heimdallr.adapters.repository import (
-    T,
+    AsyncAssignmentRepository,
     AsyncReadOnlyRepository,
     AsyncWriteOnlyRepository,
-    AsyncAssignmentRepository,
+    T,
 )
 from heimdallr.domain.models.assignment import Assignment
 
@@ -67,7 +74,7 @@ class MotorReadOnlyRepository(AsyncReadOnlyRepository, MotorRepositoryMixin):
     async def find_all(self, *args, **kwargs) -> list[T]:
         cursor = self.collection.find(kwargs)
 
-        entries: list[T] = list()
+        entries: list[T] = []
 
         async for entry in cursor:
             entries.append(self.to_model(entry))

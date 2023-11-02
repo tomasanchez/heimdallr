@@ -4,7 +4,7 @@ Database connection
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-client: AsyncIOMotorClient | None = None
+client: AsyncIOMotorClient | None = None  # type: ignore[valid-type]
 
 
 class ClientFactory:
