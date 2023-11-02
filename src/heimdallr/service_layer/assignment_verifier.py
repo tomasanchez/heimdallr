@@ -85,7 +85,7 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
 
     async def verify(self, command: VerifyAssignment) -> AssignmentVerified:
         # create an assignment from a file
-        entry = self.reader.read(command.file_ref, command.file_type)
+        entry = self.reader.read(file=command.file)
 
         if not command.verify or not entry.content:
             return AssignmentVerified(id=command.id, author=entry.author)

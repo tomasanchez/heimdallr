@@ -67,8 +67,7 @@ async def verify_assignment(
     # creates a command to be handled by the service
     command = VerifyAssignment(
         id=job.id,
-        file_ref=file.file,
-        file_type=file.content_type,  # file.content_type,
+        file=file,
     )
 
     # calls the service - which will produce an event
