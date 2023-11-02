@@ -3,26 +3,28 @@ Adapter for reading assignments from a file.
 """
 import abc
 import datetime
+from io import BytesIO
+from itertools import dropwhile
 from typing import BinaryIO
 
+import docx
 import fitz
+from fastapi import UploadFile
 from spacy import Language
 
 from heimdallr.domain.models.assignment import Assignment
-from heimdallr.utils.content_type import APPLICATION_PDF
+from heimdallr.utils import content_type
 from heimdallr.utils.formatting import contains_letters_or_numbers, normalize_sentence
 
 
 class AssignmentReader(abc.ABC):
     @abc.abstractmethod
-    def read(self, file_ref: str | BinaryIO, file_type: str) -> Assignment:
+    def read(self, file: UploadFile) -> Assignment:
         """
         Parses a file into a domain model.
 
         Args:
-            file_ref (str | BinaryIO): Either a file path or a file stream.
-            file_type (str): The file type.
-
+            file (UploadFile): The file to be parsed.
         Returns:
             Assignment: A mapped document.
         """
@@ -61,11 +63,16 @@ class SpacyAssignmentReader(AssignmentReader):
             ]
         self.nlp = nlp
 
-    def read(self, file_ref: str | BinaryIO, file_type: str = "pdf") -> Assignment:
-        if file_type == APPLICATION_PDF:
-            return self.read_pdf(file_ref)
+    def read(self, file: UploadFile) -> Assignment:
+        if file.content_type == content_type.APPLICATION_PDF:
+            return self.read_pdf(file.file).model_copy(update={"title": file.filename})
 
-        return Assignment(content=[], date=datetime.date.today(), author="Unknown")
+        if file.content_type == content_type.APPLICATION_DOCX:
+            bytes_io = BytesIO()
+            bytes_io.write(file.file.read())
+            return self.read_docx(bytes_io).model_copy(update={"title": file.filename})
+
+        return Assignment(content=[], date=datetime.date.today(), author="Unknown", title=file.filename)
 
     def read_pdf(self, file_ref: str | BinaryIO) -> Assignment:
         """
@@ -95,6 +102,29 @@ class SpacyAssignmentReader(AssignmentReader):
         return Assignment(
             content=[sentence for page in pages for sentence in page], date=datetime.date.today(), author=author
         )
+
+    def read_docx(self, file_ref: str | BytesIO) -> Assignment:
+        """
+        Parses a DOCX file into a domain model.
+
+        Args:
+            file_ref (str | BinaryIO): Either a file path or a file stream.
+
+        Returns:
+            Assignment: A mapped document.
+        """
+
+        doc = docx.Document(file_ref)
+
+        paragraphs = [p.text for p in doc.paragraphs if contains_letters_or_numbers(p.text)]
+
+        content = [sentence for paragraph in paragraphs for sentence in self._parse_page(paragraph)]
+
+        maybe_authors = [self._find_out_author(paragraph) for paragraph in paragraphs]
+
+        author = next(dropwhile(lambda name: name == "Unknown", maybe_authors), "Unknown")
+
+        return Assignment(content=content, author=author)
 
     def _parse_page(self, page_text: str) -> list[str]:
         """
