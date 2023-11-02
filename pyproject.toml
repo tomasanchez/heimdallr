@@ -87,6 +87,8 @@ disable = [
     "no-self-argument",
     "missing-class-docstring",
     'global-statement',
+    'too-many-arguments',
+    'too-many-ancestors',
 ]
 
 [tool.pylint.reports]
