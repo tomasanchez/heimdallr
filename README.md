@@ -43,19 +43,19 @@ originality.
 
 ## Environment Variables
 
-Variables prefixed with `FASTAPI_` are used to configure the API UI.
+- Variables prefixed with `FASTAPI_` are used to configure the API UI.
 
 | Name                        | Description         | Default Value    |
 |-----------------------------|---------------------|------------------|
 | FASTAPI_DEBUG               | Debug Mode          | False            |
-| FASTAPI_PROJECT_NAME        | Swagger Title       | API GATEWAY      |
+| FASTAPI_PROJECT_NAME        | Swagger Title       | Heimdallr        |
 | FASTAPI_PROJECT_DESCRIPTION | Swagger Description | ...              |
 | FASTAPI_PROJECT_LICENSE     | License info        | ...              |
 | FASTAPI_PROJECT_CONTACT     | Contact details     | ...              |
 | FASTAPI_VERSION             | Application Version | template.version |
 | FASTAPI_DOCS_URL            | Swagger Endpoint    | /docs            |
 
-Variables prefixed with `UVICORN_` are used to configure the server.
+- Variables prefixed with `UVICORN_` are used to configure the server.
 
 | Name              | Description           | Default Value |
 |-------------------|-----------------------|---------------|
@@ -63,6 +63,15 @@ Variables prefixed with `UVICORN_` are used to configure the server.
 | UVICORN_PORT      | Server Port           | 8000          |
 | UVICORN_LOG_LEVEL | Log Level             | 'info'        |
 | UVICORN_RELOAD    | Enable/Disable Reload | False         |
+
+- Variables prefixed with `MONGO_` are used for MongoDB connection.
+
+| Name           | Description            | Default Value               |
+|----------------|------------------------|-----------------------------|
+| MONGO_CLIENT   | Server Host            | 'mongodb://localhost:27017' |
+| MONGO_DATABASE | Server Database        | 'heimdallr-local'           |
+| MONGO_USER     | User LogIn credentials | None                        |
+| MONGO_PASSWORD | User credentials       | None                        |
 
 ## Continuous Integration
 
@@ -89,7 +98,7 @@ pip install poetry
 1. Clone the repository
 
     ```bash
-    git clone "git@github.com/tomasanchez/cosmic-fastapi.git"
+    git clone "git@github.com:tomasanchez/heimdallr.git"
     ```
 2. Install dependencies
 
@@ -140,6 +149,36 @@ pip install poetry
     ```bash
     poetry run python -m heimdallr.main
     ```
+
+   > NOTE: A`MongoDB` server running to verify documents. `docker-compose.yml` contains a service configured for that.
+
+2. Go to http://localhost:8000/docs to see the API documentation.
+
+### MSWord Document Support
+
+For supporting `.doc` files you **must** have `antiword` installed. Otherwise, the API will not verify `.doc` files, but
+It will still work for `.pdf` and
+
+If using `Ubuntu`, run:
+
+```bash
+sudo apt-get update -y && sudo apt-get install -y antiword
+```
+
+If using `Mac OSX`, run:
+
+```bash
+brew install antiword
+```
+
+### Using Docker (Recommended)
+
+Run the application in docker. Requires no further configuration.
+
+1. Run:
+    ```bash
+    docker-compose up
+    ```
 2. Go to http://localhost:8000/docs to see the API documentation.
 
 ## Running Tests
@@ -181,6 +220,8 @@ poetry update
 - [FastAPI official Documentation](https://fastapi.tiangolo.com/)
 - [Pydantic official Documentation](https://pydantic-docs.helpmanual.io/)
 - [Cosmic Python](https://cosmicpython.com/)
+- [Cosmic FastAPI template](https://github.com/tomasanchez/cosmic-fastapi)
+- [spaCy Documentation](https://spacy.io/)
 
 ## License
 
