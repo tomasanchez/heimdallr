@@ -7,17 +7,37 @@ import spacy
 from fastapi import Depends
 
 from heimdallr.adapters.assignment_reader import AssignmentReader, SpacyAssignmentReader
+from heimdallr.adapters.db import ClientFactory
+from heimdallr.adapters.motor_repositories import (  # type: ignore[attr-defined]
+    MotorAssignmentRepository,
+)
 from heimdallr.adapters.repository import AsyncAssignmentRepository
 from heimdallr.service_layer.assignment_verifier import (
     AssignmentVerifier,
     SpacyAssignmentVerifier,
 )
-from tests.mocks import AsyncInMemAssignmentRepository
+from heimdallr.settings.mongo_settings import MongoSettings
 
 NLP_SPANISH = "es_core_news_lg"
 
 nlp: spacy.Language | None = None
 
+########################################################################################################################
+# Database
+########################################################################################################################
+
+mongo_settings = MongoSettings()
+
+
+def get_client_factory() -> ClientFactory:
+    """
+    Injects a database client factory.
+    """
+
+    return ClientFactory(url=mongo_settings.CLIENT)
+
+
+ClientFactoryDependency = Annotated[ClientFactory, Depends(get_client_factory)]
 
 ########################################################################################################################
 # NLP
@@ -67,14 +87,14 @@ AssignmentReaderDependency = Annotated[AssignmentReader, Depends(get_assignment_
 assignment_repository: AsyncAssignmentRepository | None = None
 
 
-def get_assignment_repository() -> AsyncAssignmentRepository:
+def get_assignment_repository(client_factory: ClientFactoryDependency) -> AsyncAssignmentRepository:
     """
     Returns the Assignment Repository.
     """
     global assignment_repository
 
     if assignment_repository is None:
-        assignment_repository = AsyncInMemAssignmentRepository()
+        assignment_repository = MotorAssignmentRepository(client=client_factory(), db_name=mongo_settings.DATABASE)
 
     return assignment_repository
 
