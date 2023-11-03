@@ -16,6 +16,9 @@ spacy = "^3.6.1"
 pymupdf = "^1.23.3"
 motor = "^3.3.1"
 python-multipart = "^0.0.6"
+python-docx = "^1.0.1"
+pytextract = "^2.0.1"
+docx2txt = "^0.8"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -86,6 +89,8 @@ disable = [
     "no-self-argument",
     "missing-class-docstring",
     'global-statement',
+    'too-many-arguments',
+    'too-many-ancestors',
 ]
 
 [tool.pylint.reports]

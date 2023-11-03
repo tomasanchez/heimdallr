@@ -13,7 +13,7 @@ class TestAssignment:
         """
         author = "author"
         title = "title"
-        content = [["content"]]
+        content = ["content"]
 
         assignment = Assignment(author=author, title=title, content=content, date=datetime.date.today())
 

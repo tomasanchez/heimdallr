@@ -7,12 +7,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - MONGO_CLIENT=mongodb://mongodb:27017
     ports:
       - "8000:8000"
     depends_on:
-      - assignments-db
+      - mongodb
 
-  assignments-db:
+  mongodb:
     image: mongo:latest
     ports:
       - "27017:27017"

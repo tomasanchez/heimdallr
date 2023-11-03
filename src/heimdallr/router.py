@@ -8,6 +8,7 @@ Resources:
 from fastapi import APIRouter
 
 from heimdallr.entrypoint import monitor
+from heimdallr.entrypoint.v1 import assignments
 
 api_v1_prefix: str = "/api/v1"
 
@@ -18,3 +19,4 @@ api_router_v1: APIRouter = APIRouter(prefix=api_v1_prefix)
 root_router.include_router(monitor.router)
 
 # API routers
+api_router_v1.include_router(assignments.router)

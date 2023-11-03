@@ -21,11 +21,13 @@ COPY pyproject.toml poetry.lock README.md ${APP_DIR}/
 ADD src ${APP_DIR}/src
 
 # System dependencies
+RUN apt-get update -y
+RUN apt-get install -y antiword
 RUN pip install --disable-pip-version-check "poetry==$POETRY_VERSION"
 
 # Project initialization:
 RUN poetry config virtualenvs.create false \
     && poetry install --only main \
-    && python -m spacy download es_core_news_lg
+    && poetry run spacy download es_core_news_lg
 
 CMD ["poetry", "run", "python","-m", "heimdallr.main"]
