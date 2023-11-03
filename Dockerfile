@@ -21,6 +21,8 @@ COPY pyproject.toml poetry.lock README.md ${APP_DIR}/
 ADD src ${APP_DIR}/src
 
 # System dependencies
+RUN apt-get update -y
+RUN apt-get install -y antiword
 RUN pip install --disable-pip-version-check "poetry==$POETRY_VERSION"
 
 # Project initialization:
