@@ -3,12 +3,14 @@ Adapter for reading assignments from a file.
 """
 import abc
 import datetime
+import os
+import tempfile
 from io import BytesIO
 from itertools import dropwhile
-from typing import BinaryIO
 
 import docx
 import fitz
+import pytextract
 from fastapi import UploadFile
 from spacy import Language
 
@@ -65,33 +67,27 @@ class SpacyAssignmentReader(AssignmentReader):
 
     def read(self, file: UploadFile) -> Assignment:
         if file.content_type == content_type.APPLICATION_PDF:
-            return self.read_pdf(file.file).model_copy(update={"title": file.filename})
+            return self.read_pdf(file)
 
         if file.content_type == content_type.APPLICATION_DOCX:
-            bytes_io = BytesIO()
-            bytes_io.write(file.file.read())
-            return self.read_docx(bytes_io).model_copy(update={"title": file.filename})
+            return self.read_docx(file)
+
+        if file.content_type == content_type.APPLICATION_WORD:
+            return self.read_msword(file)
 
         return Assignment(content=[], date=datetime.date.today(), author="Unknown", title=file.filename)
 
-    def read_pdf(self, file_ref: str | BinaryIO) -> Assignment:
+    def read_pdf(self, file: UploadFile) -> Assignment:
         """
         Parses a PDF file into a domain model.
 
         Args:
-            file_ref (str | BinaryIO): Either a file path or a file stream.
+            file: The file to be parsed.
 
         Returns:
             Assignment: A mapped document.
         """
-        args: dict[str, str | bytes] = {"filetype": "pdf"}
-
-        if isinstance(file_ref, str):
-            args["filename"] = file_ref
-        else:
-            args["stream"] = file_ref.read()
-
-        file_document = fitz.Document(**args)
+        file_document = fitz.Document(stream=file.file.read(), filetype="pdf")
 
         pages: list[list[str]] = [self._parse_page(page.get_textpage().extractText()) for page in file_document]
 
@@ -100,21 +96,27 @@ class SpacyAssignmentReader(AssignmentReader):
         file_document.close()
 
         return Assignment(
-            content=[sentence for page in pages for sentence in page], date=datetime.date.today(), author=author
+            author=author,
+            title=file.filename,
+            content=[sentence for page in pages for sentence in page],
+            date=datetime.date.today(),
         )
 
-    def read_docx(self, file_ref: str | BytesIO) -> Assignment:
+    def read_docx(self, file: UploadFile) -> Assignment:
         """
         Parses a DOCX file into a domain model.
 
         Args:
-            file_ref (str | BinaryIO): Either a file path or a file stream.
+            file (UploadFile): a file reference.
 
         Returns:
             Assignment: A mapped document.
         """
+        # obtain the file as a stream compatible with python-docx Document
+        bytes_io = BytesIO()
+        bytes_io.write(file.file.read())
 
-        doc = docx.Document(file_ref)
+        doc = docx.Document(bytes_io)
 
         paragraphs = [p.text for p in doc.paragraphs if contains_letters_or_numbers(p.text)]
 
@@ -124,7 +126,44 @@ class SpacyAssignmentReader(AssignmentReader):
 
         author = next(dropwhile(lambda name: name == "Unknown", maybe_authors), "Unknown")
 
-        return Assignment(content=content, author=author)
+        return Assignment(
+            author=author,
+            title=file.filename,
+            content=content,
+            date=datetime.date.today(),
+        )
+
+    def read_msword(self, file: UploadFile) -> Assignment:
+        """
+        Parses a .doc file into a domain model.
+
+        Args:
+            file (UploadFile): a file reference.
+
+        Returns:
+            Assignment: A mapped document.
+        """
+
+        # create a temporary file with a specific name
+        with tempfile.NamedTemporaryFile(delete=False, prefix="temp_doc_", suffix=".doc") as temp_file:
+            temp_file.write(file.file.read())
+
+        text = pytextract.process(temp_file.name, extension="doc")
+
+        content = list(self._parse_page(text)) if text else []
+
+        maybe_authors = list(self._find_out_author(sentence) for sentence in content) if text else []
+
+        author = next(dropwhile(lambda name: name == "Unknown", maybe_authors), "Unknown")
+
+        temp_file.close()
+        os.remove(temp_file.name)
+
+        return Assignment(
+            author=author,
+            title=file.filename,
+            content=content,
+        )
 
     def _parse_page(self, page_text: str) -> list[str]:
         """
