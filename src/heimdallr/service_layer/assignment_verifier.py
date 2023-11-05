@@ -95,7 +95,7 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         comparisons: list[AssignmentCompared] = []
 
         # using concurrent.futures to parallelize the comparisons
-        with concurrent.futures.ProcessPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(self.compare_assignments, assignment, entry) for assignment in assignments]
 
             for future in concurrent.futures.as_completed(futures):

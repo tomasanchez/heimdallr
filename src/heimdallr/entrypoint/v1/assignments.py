@@ -102,7 +102,7 @@ async def get_assignment_by_id(
     Returns an assignment by ID.
     """
 
-    model: Assignment | None = await repository.find_by(id=assignment_id)  # type: ignore[func-returns-value]
+    model: Assignment | None = await repository.find_by(_id=str(assignment_id))  # type: ignore[func-returns-value]
 
     if not model:
         raise HTTPException(
@@ -110,6 +110,6 @@ async def get_assignment_by_id(
             detail=f"Assignment with id {assignment_id} not found.",
         )
 
-    event = AssignmentVerified(**model.dict())
+    event = AssignmentVerified(**model.model_dump())
 
     return ResponseModel(data=event)
