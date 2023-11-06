@@ -28,10 +28,20 @@ class BaseDocument(BaseModel):
 
 
 class Topic(str, Enum):
+    """
+    Classifies the main topic of an assignment.
+
+    See Also:
+        https://www.cosmicpython.com/blog/2020-10-27-i-hate-enums.html
+    """
+
     ECONOMICS = "Economics"
     MARKETING = "Marketing"
     TECHNOLOGY = "Technology"
     UNDEFINED = "Undefined"
+
+    def __str__(self) -> str:
+        return str.__str__(self)
 
 
 class ComparisonResult(BaseModel):
