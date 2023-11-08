@@ -11,6 +11,7 @@ ENV ENV=${ENV} \
     PIP_NO_CACHE_DIR=on \
     PIP_DEFAULT_TIMEOUT=100 \
     POETRY_VERSION=1.3.1 \
+    FASTAPI_MODEL_PATH = ${APP_DIR}/"models/topic_predictor.joblib" \
     UVICORN_PORT=8000   \
     UVICORN_HOST=0.0.0.0 \
     UVICORN_RELOAD=0
@@ -18,6 +19,7 @@ ENV ENV=${ENV} \
 # Deploy application
 WORKDIR $APP_DIR
 COPY pyproject.toml poetry.lock README.md ${APP_DIR}/
+COPY models ${APP_DIR}/models
 ADD src ${APP_DIR}/src
 
 # System dependencies
