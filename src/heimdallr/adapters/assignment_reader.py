@@ -4,17 +4,19 @@ Adapter for reading assignments from a file.
 import abc
 import datetime
 import os
+import string
 import tempfile
 from io import BytesIO
 from itertools import dropwhile
 
 import docx
 import fitz
+import nltk
 import pytextract
 from fastapi import UploadFile
 from spacy import Language
 
-from heimdallr.domain.models.assignment import Assignment
+from heimdallr.domain.models.assignment import UNKNOWN_AUTHOR, Assignment, Topic
 from heimdallr.utils import content_type
 from heimdallr.utils.formatting import contains_letters_or_numbers, normalize_sentence
 
@@ -29,6 +31,21 @@ class AssignmentReader(abc.ABC):
             file (UploadFile): The file to be parsed.
         Returns:
             Assignment: A mapped document.
+        """
+        raise NotImplementedError
+
+
+class TopicPredictor(abc.ABC):
+    @abc.abstractmethod
+    def predict(self, content: str) -> Topic:
+        """
+        Predicts the topic of an assignment.
+
+        Args:
+            content (str): The assignment text.
+
+        Returns:
+            Topic: the corresponding topic.
         """
         raise NotImplementedError
 
@@ -55,14 +72,37 @@ class SpacyAssignmentReader(AssignmentReader):
                 "Mg",
                 "Profesor",
                 "Prof",
-                "Hernán Borré",
-                "Hernan Borre",
-                "Hernan",
+                "Borré",
                 "Borre",
+                "Hernán Borré",
+                "Hernan Borré",
+                "Hernán Borre",
+                "Hernan Borre",
                 "Maximiliano Bracho",
-                "Maximiliano",
+                "Alejandro Bracho",
+                "Alejandro Prince",
+                "Prince",
                 "Bracho",
+                "Sistemas",
+                "SISTEMAS",
             ]
+
+        self.exclude_from_name = [
+            "Dr",
+            "Ingeniero",
+            "Ing",
+            "Licenciado",
+            "Lic",
+            "MSc",
+            "Mg",
+            "Profesor",
+            "Prof",
+            "Alumno",
+            "Legajo",
+            "Carrera",
+            "Sistemas",
+        ]
+
         self.nlp = nlp
 
     def read(self, file: UploadFile) -> Assignment:
@@ -75,7 +115,7 @@ class SpacyAssignmentReader(AssignmentReader):
         if file.content_type == content_type.APPLICATION_WORD:
             return self.read_msword(file)
 
-        return Assignment(content=[], date=datetime.date.today(), author="Unknown", title=file.filename)
+        return Assignment(content=[], date=datetime.date.today(), author=UNKNOWN_AUTHOR, title=file.filename)
 
     def read_pdf(self, file: UploadFile) -> Assignment:
         """
@@ -122,9 +162,9 @@ class SpacyAssignmentReader(AssignmentReader):
 
         content = [sentence for paragraph in paragraphs for sentence in self._parse_page(paragraph)]
 
-        maybe_authors = [self._find_out_author(paragraph) for paragraph in paragraphs]
+        maybe_authors = [self._find_out_author(sentence) for sentence in content]
 
-        author = next(dropwhile(lambda name: name == "Unknown", maybe_authors), "Unknown")
+        author = next(dropwhile(lambda name: name == UNKNOWN_AUTHOR, maybe_authors), UNKNOWN_AUTHOR)
 
         return Assignment(
             author=author,
@@ -154,7 +194,7 @@ class SpacyAssignmentReader(AssignmentReader):
 
         maybe_authors = list(self._find_out_author(sentence) for sentence in content) if text else []
 
-        author = next(dropwhile(lambda name: name == "Unknown", maybe_authors), "Unknown")
+        author = next(dropwhile(lambda name: name == UNKNOWN_AUTHOR, maybe_authors), UNKNOWN_AUTHOR)
 
         temp_file.close()
         os.remove(temp_file.name)
@@ -177,12 +217,14 @@ class SpacyAssignmentReader(AssignmentReader):
         """
 
         # Parse the page text into a spacy document
-        doc = self.nlp(page_text)
+        doc = self.nlp(page_text.replace("●", ""))
 
         # Split the page text into sentences
         page_sentences = [normalize_sentence(str(s)) for s in doc.sents if contains_letters_or_numbers(str(s))]
 
-        return page_sentences
+        splits = [sentence.split("\n") for sentence in page_sentences]
+
+        return [sentence for sublist in splits if sublist for sentence in sublist]
 
     def _find_out_author(self, page_text: str) -> str:
         """
@@ -195,16 +237,77 @@ class SpacyAssignmentReader(AssignmentReader):
         Returns:
             str: The author's name.
         """
+        page_text = page_text.replace("\n", " ")
 
         doc = self.nlp(page_text)
 
         names = [
-            ent.text
+            ent.text.title()
             for ent in doc.ents
-            if (
-                ent.label_ == self.SPACY_PERSON_LABEL
-                and not any(ent.text.startswith(name) for name in self.excluded_names)
-            )
+            if (ent.label_ == self.SPACY_PERSON_LABEL and not any(name in ent.text for name in self.excluded_names))
         ]
 
-        return names[0] if names else "Unknown"
+        possible_name = next(dropwhile(lambda name: name == UNKNOWN_AUTHOR, names), None)
+
+        if not possible_name:
+            return UNKNOWN_AUTHOR
+
+        for noun in self.exclude_from_name:
+            possible_name = possible_name.replace(noun, "")
+
+        return possible_name.strip()
+
+
+class SklearnTopicPredictor(TopicPredictor):
+    PRON_LABEL = "-PRON-"
+
+    def __init__(self, model, nlp: Language):
+        """
+        A Topic Predictor that uses a trained model to predict the topic of an assignment.
+
+        Args:
+            model: A trained model.
+            vectorizer: A vectorizer.
+        """
+        nltk.download("stopwords")
+        self.model = model
+        self.nlp: Language = nlp
+        self.stop_words: list[str] = nltk.corpus.stopwords.words("spanish")
+        self.symbols = " ".join(string.punctuation).split(" ") + ["-", "...", "”", "”", "'", "“", "¿"]
+
+    def predict(self, content: str) -> Topic:
+        """
+        Predicts the topic of an assignment.
+
+        Args:
+            content (str): The assignment text.
+
+        Returns:
+            Topic: the corresponding topic.
+        """
+        raise NotImplementedError
+
+    def clean_text(self, text: str) -> str:
+        """
+        Applies some pre-processing on the given text.
+
+        Args:
+            text (str): A text to be processed.
+
+        Returns:
+            str: The processed text.
+        """
+        text = text.strip().replace("\n", " ").replace("\r", " ")
+        return text.lower()
+
+    # def _tokenize(self, sample: str):
+    #     tokens = self.nlp(sample)
+    #     lemmas = []
+    #
+    #     for tok in tokens:
+    #         lemmas.append(tok.lemma_.lower().strip() if tok.lemma_ != self.PRON_LABEL else tok.lower_)
+    #
+    #     tokens = lemmas
+    #     tokens = [tok for tok in tokens if tok not in self.stop_words]
+    #     tokens = [tok for tok in tokens if tok not in self.symbols]
+    #     return tokens
