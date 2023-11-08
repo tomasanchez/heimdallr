@@ -3,6 +3,8 @@ Assignment Verifier Service
 """
 import abc
 import concurrent.futures
+import datetime
+import logging
 
 from spacy import Language
 
@@ -15,6 +17,18 @@ from heimdallr.domain.events.assignments import (
     SentenceCompared,
 )
 from heimdallr.domain.models.assignment import Assignment, AssignmentVerification
+
+logger = logging.getLogger("uvicorn.error")
+
+"""
+According to https://www.inter-contact.de/en/blog/text-length-languages the AVG letters per word is 5.46 for Spanish
+
+Round it up to 6, and add 1 for the space between words, and we get 7 as the AVG word length.
+"""
+WORD_AVG_LENGTH = 7
+MIN_WORDS = 3
+MIN_ASSIGNMENT_SIMILARITY = 0.991
+VERIFY_ASSIGNMENTS = False
 
 
 class AssignmentVerifier(abc.ABC):
@@ -95,19 +109,24 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         comparisons: list[AssignmentCompared] = []
 
         # using concurrent.futures to parallelize the comparisons
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(self.compare_assignments, assignment, entry) for assignment in assignments]
+        if VERIFY_ASSIGNMENTS:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(self.compare_assignments, assignment, entry) for assignment in assignments]
 
-            for future in concurrent.futures.as_completed(futures):
-                result: AssignmentCompared = future.result()
-                if result.similarities:
-                    comparisons.append(result)
+                for future in concurrent.futures.as_completed(futures):
+                    result: AssignmentCompared = future.result()
+                    if result.similarities:
+                        comparisons.append(result)
+        else:
+            logger.warning("Assignment verification is disabled.")
 
         # map the comparison results to the AssignmentVerification model
         verifications = [AssignmentVerification(**comparison.model_dump()) for comparison in comparisons]
         entry.similarities = verifications
 
         persisted = await self.repository.save(entry)
+
+        logger.info("Assignment %s verified.", str(persisted.id))
 
         return AssignmentVerified(
             id=persisted.id,
@@ -127,6 +146,27 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         Returns:
             None: When the assignment is not plagiarized.
         """
+        starting_time = datetime.datetime.now()
+
+        # preliminary check to avoid unnecessary comparisons
+        entry_doc = self.nlp("".join(entry.content))
+        assignment_doc = self.nlp("".join(assignment.content))
+        similarity = entry_doc.similarity(assignment_doc)
+
+        if similarity < MIN_ASSIGNMENT_SIMILARITY:
+            return AssignmentCompared(id=assignment.id, author=assignment.author, plagiarism=0.0)
+
+        if similarity == 1:
+            logger.info("EXACTLY SAME AS %s Assignment(id=%s).", assignment.author, str(assignment.id))
+            return AssignmentCompared(id=assignment.id, author=assignment.author, plagiarism=1.0)
+
+        logger.info(
+            "Similar(%f) to Assignment(id=%s, author=%s)",
+            similarity,
+            str(assignment.id),
+            assignment.author,
+        )
+
         comparison_results: set[SentenceCompared] = set()
 
         # find the first plagiarized match for each entry sentence
@@ -139,6 +179,15 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
 
         plagiarism = sum(result.plagiarism for result in comparison_results) / len(entry.content)
 
+        seconds = (datetime.datetime.now() - starting_time).total_seconds()
+
+        logger.info(
+            "Finished comparison with Assignment(id=%s, author=%s) in %f seconds.",
+            str(assignment.id),
+            assignment.author,
+            seconds,
+        )
+
         return AssignmentCompared(
             id=assignment.id,
             author=assignment.author,
@@ -147,6 +196,10 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         )
 
     def compare_sentence(self, sentence: str, entry_sentence: str) -> SentenceCompared:
+        # assume that the sentence is not plagiarized if it is too short
+        if len(sentence) < MIN_WORDS * WORD_AVG_LENGTH:
+            return SentenceCompared(present=sentence, compared=entry_sentence, plagiarism=0)
+
         persisted_sentence_doc = self.nlp(sentence)
         entry_sentence_doc = self.nlp(entry_sentence)
         similarity = persisted_sentence_doc.similarity(entry_sentence_doc)
