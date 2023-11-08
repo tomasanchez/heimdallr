@@ -37,7 +37,6 @@ class AssignmentCompared(CamelCaseModel):
 
     id: UUID4 = Field(description="Assigment Compared ID.", example="123e4567-e89b-12d3-a456-426614174000")
     author: str | None = Field(description="Assignment's author.", example="John Doe", default=UNKNOWN_AUTHOR)
-    topic: Topic = Field(description="Assignment's topic.", example="NLP", default=Topic.UNDEFINED)
     plagiarism: float = Field(description="Average Plagiarism percentage.", example=0.0, default=0.0)
     similarities: list[SentenceCompared] = Field(description="Similarities found.", example=[], default_factory=list)
 
@@ -49,6 +48,7 @@ class AssignmentVerified(CamelCaseModel):
 
     id: UUID4 = Field(description="Assignment's ID.", example="123e4567-e89b-12d3-a456-426614174000")
     title: str | None = Field(description="Assignment's title.", example="NLP Assignment", default="Unknown")
+    topic: Topic = Field(description="Assignment's topic.", example="NLP", default=Topic.UNDEFINED)
     author: str | None = Field(description="Name of the responsible person", example="John Doe", default=UNKNOWN_AUTHOR)
     similarities: list[AssignmentCompared] | None = Field(description="Plagiarism results.", example=[], default=None)
 
