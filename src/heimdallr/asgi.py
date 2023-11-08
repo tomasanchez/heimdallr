@@ -6,11 +6,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from heimdallr.dependencies import get_nlp
+from heimdallr.dependencies import get_nlp, get_topic_predictor
 from heimdallr.router import api_router_v1, root_router
 from heimdallr.settings.api_settings import ApplicationSettings
 
-log = logging.getLogger()
+log = logging.getLogger("uvicorn.error")
 
 
 async def on_startup():
@@ -22,6 +22,7 @@ async def on_startup():
     """
     log.debug("Execute FastAPI startup event handler.")
     nlp = get_nlp()
+    get_topic_predictor(natural_language_processor=nlp)
     log.debug("Natural Language Processor loaded", extra={"nlp": nlp.meta})
 
 
