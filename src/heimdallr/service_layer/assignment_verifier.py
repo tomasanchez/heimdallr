@@ -28,7 +28,6 @@ Round it up to 6, and add 1 for the space between words, and we get 7 as the AVG
 WORD_AVG_LENGTH = 7
 MIN_WORDS = 3
 MIN_ASSIGNMENT_SIMILARITY = 0.991
-VERIFY_ASSIGNMENTS = False
 
 
 class AssignmentVerifier(abc.ABC):
@@ -84,6 +83,7 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         repository: AsyncAssignmentRepository,
         nlp: Language,
         similarity_threshold: float = 0.95,
+        detect_plagiarism: bool = True,
     ):
         """
         Args:
@@ -91,17 +91,19 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
             repository (AsyncAssignmentRepository): An assignment repository.
             nlp (Language): The Natural Language Processor.
             similarity_threshold (float): The minimum similarity required to consider a sentence plagiarized.
+            detect_plagiarism (bool): Whether to verify assignments or not.
         """
         self.reader = reader
         self.repository = repository
         self.nlp = nlp
         self.similarity_threshold = similarity_threshold
+        self.detect_plagiarism = detect_plagiarism
 
     async def verify(self, command: VerifyAssignment) -> AssignmentVerified:
         # create an assignment from a file
         entry = self.reader.read(file=command.file)
 
-        if not command.verify or not entry.content:
+        if not entry.content:
             return AssignmentVerified(id=command.id, author=entry.author)
 
         entry.id = command.id
@@ -109,7 +111,7 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         comparisons: list[AssignmentCompared] = []
 
         # using concurrent.futures to parallelize the comparisons
-        if VERIFY_ASSIGNMENTS:
+        if self.detect_plagiarism:
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [executor.submit(self.compare_assignments, assignment, entry) for assignment in assignments]
 
