@@ -35,10 +35,11 @@ class Topic(str, Enum):
         https://www.cosmicpython.com/blog/2020-10-27-i-hate-enums.html
     """
 
-    ECONOMICS = "Economics"
-    MARKETING = "Marketing"
-    TECHNOLOGY = "Technology"
     UNDEFINED = "Undefined"
+    EXPERIENCE_ECONOMY = "Experience Economy"
+    EMERGING_SYSTEMS = "Emerging Systems"
+    DIGITAL_ECONOMY = "Digital Economy"
+    INNOVATION = "Innovation"
 
     def __str__(self) -> str:
         return str.__str__(self)
