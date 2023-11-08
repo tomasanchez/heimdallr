@@ -11,11 +11,17 @@ from itertools import dropwhile
 
 import docx
 import fitz
+import joblib
 import nltk
+import pandas as pd
 import pytextract
 from fastapi import UploadFile
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
 from spacy import Language
 
+from heimdallr.adapters.text_processing import CleanTextTransformer
 from heimdallr.domain.models.assignment import UNKNOWN_AUTHOR, Assignment, Topic
 from heimdallr.utils import content_type
 from heimdallr.utils.formatting import contains_letters_or_numbers, normalize_sentence
@@ -53,7 +59,12 @@ class TopicPredictor(abc.ABC):
 class SpacyAssignmentReader(AssignmentReader):
     SPACY_PERSON_LABEL = "PER"
 
-    def __init__(self, nlp: Language, excluded_names: list[str] | None = None):
+    def __init__(
+        self,
+        nlp: Language,
+        excluded_names: list[str] | None = None,
+        topic_predictor: TopicPredictor | None = None,
+    ):
         """
         A PDF Reader that maps the document into a domain model.
 
@@ -101,21 +112,29 @@ class SpacyAssignmentReader(AssignmentReader):
             "Legajo",
             "Carrera",
             "Sistemas",
+            "Ayudantes",
         ]
 
         self.nlp = nlp
 
+        self.topic_predictor = topic_predictor
+
     def read(self, file: UploadFile) -> Assignment:
+        assignment = Assignment(content=[], date=datetime.date.today(), author=UNKNOWN_AUTHOR, title=file.filename)
+
         if file.content_type == content_type.APPLICATION_PDF:
-            return self.read_pdf(file)
+            assignment = self.read_pdf(file)
 
         if file.content_type == content_type.APPLICATION_DOCX:
-            return self.read_docx(file)
+            assignment = self.read_docx(file)
 
         if file.content_type == content_type.APPLICATION_WORD:
-            return self.read_msword(file)
+            assignment = self.read_msword(file)
 
-        return Assignment(content=[], date=datetime.date.today(), author=UNKNOWN_AUTHOR, title=file.filename)
+        if self.topic_predictor and assignment.content:
+            assignment.topic = self.topic_predictor.predict(" ".join(assignment.content))
+
+        return assignment
 
     def read_pdf(self, file: UploadFile) -> Assignment:
         """
@@ -261,19 +280,31 @@ class SpacyAssignmentReader(AssignmentReader):
 class SklearnTopicPredictor(TopicPredictor):
     PRON_LABEL = "-PRON-"
 
-    def __init__(self, model, nlp: Language):
+    def __init__(self, nlp: Language, download: bool = False, model_path: str | None = None):
         """
         A Topic Predictor that uses a trained model to predict the topic of an assignment.
 
         Args:
-            model: A trained model.
-            vectorizer: A vectorizer.
+            nlp: A Natural Language Processor
+            download: Whether to download NLTK stopwords or not
+            model_path: path to a .joblib model
         """
-        nltk.download("stopwords")
-        self.model = model
+        if download:
+            nltk.download("stopwords")
+
         self.nlp: Language = nlp
         self.stop_words: list[str] = nltk.corpus.stopwords.words("spanish")
         self.symbols = " ".join(string.punctuation).split(" ") + ["-", "...", "”", "”", "'", "“", "¿"]
+        self.count_v = CountVectorizer(tokenizer=self.tokenize, ngram_range=(1, 1))
+        self.clf = LinearSVC()
+
+        # load a model
+        if model_path:
+            self.pipeline = joblib.load(model_path)
+        else:
+            self.pipeline = Pipeline(
+                [("clean_up", CleanTextTransformer()), ("vectorize", self.count_v), ("clf", self.clf)]
+            )
 
     def predict(self, content: str) -> Topic:
         """
@@ -285,29 +316,43 @@ class SklearnTopicPredictor(TopicPredictor):
         Returns:
             Topic: the corresponding topic.
         """
-        raise NotImplementedError
+        [label] = self.pipeline.predict([content])
+        return Topic(label)
 
-    def clean_text(self, text: str) -> str:
+    def cleanup_text(self, docs: list[str]) -> pd.Series:
         """
-        Applies some pre-processing on the given text.
+        Applies some pre-processing on the given list of texts.
 
         Args:
-            text (str): A text to be processed.
+            docs: a list of texts to be processed.
 
         Returns:
-            str: The processed text.
+            Series: The processed texts.
         """
-        text = text.strip().replace("\n", " ").replace("\r", " ")
-        return text.lower()
+        texts = []
 
-    # def _tokenize(self, sample: str):
-    #     tokens = self.nlp(sample)
-    #     lemmas = []
-    #
-    #     for tok in tokens:
-    #         lemmas.append(tok.lemma_.lower().strip() if tok.lemma_ != self.PRON_LABEL else tok.lower_)
-    #
-    #     tokens = lemmas
-    #     tokens = [tok for tok in tokens if tok not in self.stop_words]
-    #     tokens = [tok for tok in tokens if tok not in self.symbols]
-    #     return tokens
+        for doc in docs:
+            tokens = self.tokenize(doc, disable=["parser", "ner"])
+            text = " ".join([tok for tok in tokens if tok not in self.symbols])
+            texts.append(text)
+
+        return pd.Series(texts)
+
+    def tokenize(self, sample: str, disable: list[str] | None = None) -> list[str]:
+        """
+        Given a sample text, apply some pre-processing and tokenize it.
+
+        Args:
+            sample: The text to be tokenized.
+            disable: A list of spacy components to be disabled.
+
+        Returns:
+            list[str]: The tokenized text.
+        """
+        tokens = self.nlp(sample, disable=disable or [])
+        lemmas = []
+
+        for tok in tokens:
+            lemmas.append(tok.lemma_.lower().strip() if tok.lemma_ != self.PRON_LABEL else tok.lower_)
+
+        return [lemma for lemma in lemmas if lemma not in self.stop_words and lemma not in self.symbols]
