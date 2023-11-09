@@ -46,6 +46,9 @@ class ApplicationSettings(BaseSettings):
         * FASTAPI_PROJECT_DESCRIPTION
         * FASTAPI_PROJECT_LICENSE
         * FASTAPI_PROJECT_CONTACT
+        * FASTAPI_MODEL_PATH
+        * FASTAPI_DETECT_PLAGIARISM
+        * FASTAPI_SIMILARITY_THRESHOLD
         * FASTAPI_VERSION
         * FASTAPI_DOCS_URL
 
@@ -56,6 +59,9 @@ class ApplicationSettings(BaseSettings):
         PROJECT_DESCRIPTION (str): FastAPI project description.
         PROJECT_LICENSE (LicenseInfo): FastAPI project license information.
         PROJECT_CONTACT (ContactInfo): FastAPI project contact details.
+        MODEL_PATH (str): Path to the model file.
+        DETECT_PLAGIARISM (bool): Whether to detect plagiarism or not.
+        SIMILARITY_THRESHOLD (float): Similarity threshold.
         VERSION (str): Application version.
         DOCS_URL (str): Path where swagger ui will be served at.
 
@@ -73,6 +79,9 @@ class ApplicationSettings(BaseSettings):
     PROJECT_CONTACT: ContactInfo | None = ContactInfo(
         name="Tom Sanchez", url="https://tomsanchez.com.ar", email="info@tomsanchez.com.ar"
     )
+    MODEL_PATH: str = "F:\\dev\\heimdallr\\models\\topic_predictor.joblib"
+    DETECT_PLAGIARISM: bool = True
+    SIMILARITY_THRESHOLD: float = 0.95
     VERSION: str = __version__
     DOCS_URL: str = "/docs"
 

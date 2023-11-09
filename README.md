@@ -45,15 +45,18 @@ originality.
 
 - Variables prefixed with `FASTAPI_` are used to configure the API UI.
 
-| Name                        | Description         | Default Value    |
-|-----------------------------|---------------------|------------------|
-| FASTAPI_DEBUG               | Debug Mode          | False            |
-| FASTAPI_PROJECT_NAME        | Swagger Title       | Heimdallr        |
-| FASTAPI_PROJECT_DESCRIPTION | Swagger Description | ...              |
-| FASTAPI_PROJECT_LICENSE     | License info        | ...              |
-| FASTAPI_PROJECT_CONTACT     | Contact details     | ...              |
-| FASTAPI_VERSION             | Application Version | template.version |
-| FASTAPI_DOCS_URL            | Swagger Endpoint    | /docs            |
+| Name                         | Description                         | Default Value                      |
+|------------------------------|-------------------------------------|------------------------------------|
+| FASTAPI_DEBUG                | Debug Mode                          | False                              |
+| FASTAPI_PROJECT_NAME         | Swagger Title                       | Heimdallr                          |
+| FASTAPI_PROJECT_DESCRIPTION  | Swagger Description                 | ...                                |
+| FASTAPI_PROJECT_LICENSE      | License info                        | ...                                |
+| FASTAPI_PROJECT_CONTACT      | Contact details                     | ...                                |
+| FASTAPI_VERSION              | Application Version                 | template.version                   |
+| FASTAPI_DOCS_URL             | Swagger Endpoint                    | /docs                              |
+| FASTAPI_MODEL_PATH           | Trained model path                  | /app/models/topic_predictor.joblib |
+| FASTAPI_DETECT_PLAGIARISM    | Whether to detect plagiarism or not | True                               |
+| FASTAPI_SIMILARITY_THRESHOLD | Minimum similarity percentage       | 0.95                               |
 
 - Variables prefixed with `UVICORN_` are used to configure the server.
 

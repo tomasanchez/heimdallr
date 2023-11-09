@@ -8,9 +8,9 @@ from heimdallr.service_layer.assignment_verifier import AssignmentVerifier
 class TestAssignmentVerifier:
     SENTENCE = "This is a sentence."
 
-    def test_compare_same_sentence(self, assignment_verifier: AssignmentVerifier):
+    def test_compare_same_short_sentence(self, assignment_verifier: AssignmentVerifier):
         """
-        GIVEN two sentences
+        GIVEN two short sentences
         WHEN the verifier compares them
         THEN it should return a SentenceCompared event.
         """
@@ -25,7 +25,26 @@ class TestAssignmentVerifier:
         # then
         assert result.present == self.SENTENCE
         assert result.compared == self.SENTENCE
-        assert result.plagiarism == 1.0
+        assert result.plagiarism == 0
+
+    def test_compare_same_long_sentence(self, assignment_verifier: AssignmentVerifier):
+        """
+        GIVEN two long sentences
+        WHEN the verifier compares them
+        THEN it should return a SentenceCompared event.
+        """
+        # given a sentence
+        long_sentence = self.SENTENCE.replace(".", ", a very long sentence.")
+        # when
+        result = assignment_verifier.compare_sentence(
+            sentence=long_sentence,
+            entry_sentence=long_sentence,
+        )
+
+        # then
+        assert result.present == long_sentence
+        assert result.compared == long_sentence
+        assert result.plagiarism == 1
 
     def test_compare_different_sentence(self, assignment_verifier: AssignmentVerifier):
         """
@@ -61,4 +80,4 @@ class TestAssignmentVerifier:
         # then
         assert result.id == assignment.id
         assert result.author == assignment.author
-        assert result.plagiarism == 1.0
+        assert result.plagiarism == 1

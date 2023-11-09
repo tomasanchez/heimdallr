@@ -1,12 +1,18 @@
 """
 Dependencies for Heimdallr.
 """
+import os
 from typing import Annotated
 
 import spacy
 from fastapi import Depends
 
-from heimdallr.adapters.assignment_reader import AssignmentReader, SpacyAssignmentReader
+from heimdallr.adapters.assignment_reader import (
+    AssignmentReader,
+    SklearnTopicPredictor,
+    SpacyAssignmentReader,
+    TopicPredictor,
+)
 from heimdallr.adapters.db import ClientFactory
 from heimdallr.adapters.motor_repositories import (  # type: ignore[attr-defined]
     MotorAssignmentRepository,
@@ -16,6 +22,7 @@ from heimdallr.service_layer.assignment_verifier import (
     AssignmentVerifier,
     SpacyAssignmentVerifier,
 )
+from heimdallr.settings.api_settings import ApplicationSettings
 from heimdallr.settings.mongo_settings import MongoSettings
 
 NLP_SPANISH = "es_core_news_lg"
@@ -62,18 +69,43 @@ NLPDependency = Annotated[spacy.Language, Depends(get_nlp)]
 ########################################################################################################################
 # Assignment Reader
 ########################################################################################################################
+topic_predictor: TopicPredictor | None = None
 
 pdf_assignment_reader: AssignmentReader | None = None
 
 
-def get_assignment_reader(natural_language_processor: NLPDependency) -> AssignmentReader:
+def get_topic_predictor(natural_language_processor: NLPDependency) -> TopicPredictor | None:
+    """
+    Returns the Topic Predictor.
+    """
+    global topic_predictor
+
+    if topic_predictor is None:
+        model_path = ApplicationSettings().MODEL_PATH
+        if os.path.exists(model_path):
+            topic_predictor = SklearnTopicPredictor(
+                nlp=natural_language_processor,
+                download=True,
+                model_path=model_path,
+            )
+
+    return topic_predictor
+
+
+TopicPredictorDependency = Annotated[TopicPredictor | None, Depends(get_topic_predictor)]
+
+
+def get_assignment_reader(
+    natural_language_processor: NLPDependency,
+    predictor: TopicPredictorDependency,
+) -> AssignmentReader:
     """
     Returns the Assignment Reader.
     """
     global pdf_assignment_reader
 
     if pdf_assignment_reader is None:
-        pdf_assignment_reader = SpacyAssignmentReader(natural_language_processor)
+        pdf_assignment_reader = SpacyAssignmentReader(nlp=natural_language_processor, topic_predictor=predictor)
 
     return pdf_assignment_reader
 
@@ -120,8 +152,13 @@ def get_assignment_verifier(
     global assignment_verifier
 
     if assignment_verifier is None:
+        settings = ApplicationSettings()
         assignment_verifier = SpacyAssignmentVerifier(
-            reader=reader, repository=assignment_repo, nlp=natural_language_processor
+            reader=reader,
+            repository=assignment_repo,
+            nlp=natural_language_processor,
+            similarity_threshold=settings.SIMILARITY_THRESHOLD,
+            detect_plagiarism=settings.DETECT_PLAGIARISM,
         )
 
     return assignment_verifier
