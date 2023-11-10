@@ -4,6 +4,8 @@ A powerful and intelligent plagiarism detection system designed to uphold academ
 of written works. Named after Heimdallr, the all-seeing Norse god, this system possesses unparalleled vigilance and a
 watchful eye over the realm of academic content.
 
+More information [Heimdallr](Heimdallr.pdf).
+
 ## Content
 
 <!-- TOC -->
@@ -11,12 +13,16 @@ watchful eye over the realm of academic content.
 * [Heimdallr](#heimdallr)
     * [Content](#content)
     * [Key Features](#key-features)
+    * [Why Heimdallr?](#why-heimdallr)
     * [Environment Variables](#environment-variables)
     * [Continuous Integration](#continuous-integration)
+    * [Quick set up](#quick-set-up)
     * [Development Environment](#development-environment)
         * [Installing Poetry](#installing-poetry)
         * [Building the Development Environment](#building-the-development-environment)
     * [Running Local](#running-local)
+        * [MSWord Document Support](#msword-document-support)
+        * [Using Docker (Recommended)](#using-docker-recommended)
     * [Running Tests](#running-tests)
     * [Updating Dependencies](#updating-dependencies)
     * [Recommended Readings](#recommended-readings)
@@ -82,11 +88,219 @@ This project uses `make` as an adaptation layer.
 
 Run `make help` to see all available commands.
 
+## Quick set up
+
+**HIGHLY RECOMMENDED**: Use `docker-compose` to run the application locally.
+
+1. Run:
+
+    ```bash
+    docker-compose up
+    ```
+   This will:
+    - Build the application image
+    - Start a `MongoDB` server
+    - Start the application
+    - Train a model for topic prediction
+    - Run DB migrations
+2. Go to http://localhost:8000/docs to see the API documentation.
+3. Use the `Verify Assignment` `POST` method to verify a document.
+   You can use the [rifkin_test](rifkin_test.pdf) document as an example.
+4. See the logs for the `heimdallr` service to see the results.
+   e.g:
+    ```log
+   INFO:     Started server process [1]
+   INFO:     Waiting for application startup.
+   INFO:     Loading model from /app/models/topic_predictor_dev.joblib
+   INFO:     Application startup complete.![img.png](img.png)
+   INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+   INFO:     172.20.0.1:52912 - "POST /api/v1/assignments HTTP/1.1" 202 Accepted
+   INFO:     Read Assignment(id=32750af8-bdfe-4508-a37a-5aa9718a1188, author=Franco Zanette)
+   INFO:     Similar(0.992015) to Assignment(id=891bdd47-5ec0-40cf-ad42-9e7c99a78648, author=David Choren)
+   INFO:     Similar(0.994410) to Assignment(id=4bdd4797-1617-45be-8b64-bd36b97908ff, author=Levy Nazareno Isaac)
+   INFO:     Similar(0.991231) to Assignment(id=35cc1575-ea46-416c-95cd-260cb7efda75, author=Leon Peralta)
+   ```
+
+   > NOTE: The `POST` method returns a `202 Accepted` response. This means that the document is being verified in the
+   > background
+
+5. When verification is complete you should a log similar to:
+    ```log
+   INFO:     Finished comparison with Assignment(id=4bdd4797-1617-45be-8b64-bd36b97908ff, author=Levy Nazareno Isaac) in 117.274768 seconds.
+   INFO:     Finished comparison with Assignment(id=35cc1575-ea46-416c-95cd-260cb7efda75, author=Leon Peralta) in 107.669727 seconds.
+   INFO:     Finished comparison with Assignment(id=891bdd47-5ec0-40cf-ad42-9e7c99a78648, author=David Choren) in 147.236305 seconds.
+   INFO:    Assignment e68d59ff-d725-4dfc-940a-b5ab449cf98c verified.
+    ```
+   > NOTE: Verification time depends on the size of the document and the number of documents in the database. It may
+   mate take a while.
+
+6. Retrieve the assignment with the `GET` method, with its `UUID` as parameter. e.g:
+
+    ```json
+   {
+    "data": {
+    "id": "32750af8-bdfe-4508-a37a-5aa9718a1188",
+    "title": "TP5-Franco Zanette.docx.docx",
+    "topic": "Emerging Systems",
+    "author": "Franco Zanette",
+    "similarities": [
+    {
+    "id": "4bdd4797-1617-45be-8b64-bd36b97908ff",
+    "author": "Levy Nazareno Isaac",
+    "plagiarism": 0.19135095761849497,
+    "similarities": [
+    {
+    "present": "Puede describir el vínculo entre las leyes de la termodinámica de Newton y la “factura entrópica”.",
+    "compared": "Puede describir el vínculo entre las leyes de la termodinámica de Newton y la “factura entrópica”.",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué dice Rifkin que la “internet de las cosas IOT” le aportará a la 3ra revolución industrial?",
+    "compared": "Qué dice Rifkin que la “internet de las cosas IOT” le aportará a la 3ra revolución industrial?",
+    "plagiarism": 1
+    },
+    {
+    "present": "NOTA: las respuestas no deberán superar en su conjunto a 2 páginas del mismo formato que esta guía.",
+    "compared": "NOTA: las respuestas no deberán superar en su conjunto a 2 páginas del mismo formato que esta guía.",
+    "plagiarism": 1
+    },
+    {
+    "present": "Podría caracterizar la Primera y Segunda revolución industrial al decir de Rifkin?",
+    "compared": "Podría caracterizar la Primera y Segunda revolución industrial al decir de Rifkin?",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué inventos son las metáforas de cada infraestructura en cada una de esas etapas.",
+    "compared": "Qué inventos son las metáforas de cada infraestructura en cada una de esas etapas.",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué ejemplos actuales de “procomunes” se le ocurren?",
+    "compared": "Qué ejemplos actuales de “procomunes” se le ocurren?",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué límites le ve Ud. a los procomunes como forma de producción?",
+    "compared": "Qué límites le ve Ud. a los procomunes como forma de producción?",
+    "plagiarism": 1
+    },
+    {
+    "present": "qué estaría faltando?",
+    "compared": "qué estaría faltando?",
+    "plagiarism": 1
+    },
+    {
+    "present": "La principal limitación de los procomunes como forma de producción la incapacidad de la sociedad de proteger los recursos procomunes de la sobreexplotación por parte un individuo",
+    "compared": "El internet de las cosas permitirá unificar la comunicación, la energía y la logística posibilitando la optimización de los procesos .",
+    "plagiarism": 0.9502497961617389
+    },
+    {
+    "present": "E. intangible o “sin peso”",
+    "compared": "E. intangible o “sin peso”",
+    "plagiarism": 1
+    }
+    ]
+    },
+    {
+    "id": "35cc1575-ea46-416c-95cd-260cb7efda75",
+    "author": "Leon Peralta",
+    "plagiarism": 0.11538461538461539,
+    "similarities": [
+    {
+    "present": "Qué dice Rifkin que la “internet de las cosas IOT” le aportará a la 3ra revolución industrial?",
+    "compared": "Qué dice Rifkin que la “internet de las cosas IOT” le aportará a la 3ra revolución industrial?",
+    "plagiarism": 1
+    },
+    {
+    "present": "Podría caracterizar la Primera y Segunda revolución industrial al decir de Rifkin?",
+    "compared": "Podría caracterizar la Primera y Segunda revolución industrial al decir de Rifkin?",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué inventos son las metáforas de cada infraestructura en cada una de esas etapas.",
+    "compared": "Qué inventos son las metáforas de cada infraestructura en cada una de esas etapas.",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué límites le ve Ud. a los procomunes como forma de producción?",
+    "compared": "Qué límites le ve Ud. a los procomunes como forma de producción?",
+    "plagiarism": 1
+    },
+    {
+    "present": "Qué ejemplos actuales de “procomunes” se le ocurren?",
+    "compared": "Qué ejemplos actuales de “procomunes” se le ocurren?",
+    "plagiarism": 1
+    },
+    {
+    "present": "qué estaría faltando?",
+    "compared": "qué estaría faltando?",
+    "plagiarism": 1
+    }
+    ]
+    },
+    {
+    "id": "891bdd47-5ec0-40cf-ad42-9e7c99a78648",
+    "author": "David Choren",
+    "plagiarism": 0.1519146892150015,
+    "similarities": [
+    {
+    "present": "Las plataformas tecnológicas de la primera y segunda revolución industrial estaban centralizadas y sometidas a un control jerarquizado y su explotación estaba basada en la idea de que los recursos de la Tierra están para el servicio de la personas y el lucro..",
+    "compared": "Las plataformas tecnológicas de la primera  y la segunda revoluciones industriales estaban centralizadas y sometidas a un control jerarquizado.",
+    "plagiarism": 0.9535765262616537
+    },
+    {
+    "present": "3.¿Qué dice Rifkin que la “internet de las cosas IOT” le aportará a la 3ra revolución industrial?",
+    "compared": "Qué dice Rifkin que la “internet de las cosas IOT” le aportará a la 3ra revolución industrial?",
+    "plagiarism": 0.992672017325718
+    },
+    {
+    "present": "Qué límites le ve Ud. a los procomunes como forma de producción?",
+    "compared": "Qué límites le ve Ud. a los procomunes como forma de producción?",
+    "plagiarism": 1
+    },
+    {
+    "present": "NOTA: ​las respuestas no deberán superar en su conjunto a 2 páginas del mismo formato que esta guía.",
+    "compared": "NOTA: las respuestas no deberán superar en su conjunto a 2 páginas del mismo formato que esta guía.",
+    "plagiarism": 0.9813714487124504
+    },
+    {
+    "present": "qué estaría faltando?",
+    "compared": "qué estaría faltando?",
+    "plagiarism": 1
+    },
+    {
+    "present": "2.¿Podría caracterizar la Primera y Segunda revolución industrial al decir de Rifkin?",
+    "compared": "Podría caracterizar la Primera y Segunda revolución industrial al decir de Rifkin?",
+    "plagiarism": 0.989975333730042
+    },
+    {
+    "present": "E. intangible o “sin peso”",
+    "compared": "E. intangible o “sin peso”",
+    "plagiarism": 1
+    },
+    {
+    "present": "5.¿Qué ejemplos actuales de “procomunes” se le ocurren?",
+    "compared": "Qué ejemplos actuales de “procomunes” se le ocurren?",
+    "plagiarism": 0.9819685131502129
+    }
+    ]
+    }
+    ]
+    }
+    }
+    ```
+
+7. To stop the application run:
+
+    ```bash
+    docker-compose down
+    ```
+
 ## Development Environment
 
 ### Installing Poetry
 
-This package uses poetry for dependency management.
+This package uses poetry for dependency management and `Python 3.10` as interpreter.
 
 Install poetry in the system `site_packages`. DO NOT INSTALL IT in a virtual environment itself.
 
@@ -127,7 +341,23 @@ pip install poetry
     ```bash
     poetry shell
     ```
-3. Activate pre-commit hooks (Optional)
+3. Download `spaCy` trained Spanish Model
+
+    ```bash
+    poetry run python -m spacy download es_core_news_lg
+    ```
+4. Train model for topic prediction (Optional)
+    - Run script
+   ```bash
+    poetry run python -m heimdallr.train
+   ```
+    - Update `FASTAPI_MODEL_PATH` environment variable with the new model path
+        ```bash
+        export FASTAPI_MODEL_PATH=/path/to/new/model
+        ```
+
+
+5. Activate pre-commit hooks (Optional)
 
    Using [pre-commit](https://pre-commit.com/) to run some checks before committing is highly recommended.
 
@@ -147,7 +377,7 @@ pip install poetry
 
 ## Running Local
 
-1. Run:
+1. Either:
 
     ```bash
     poetry run python -m heimdallr.main
@@ -217,6 +447,27 @@ To update the dependencies run:
 ```bash
 poetry update
 ```
+
+## What's missing?
+
+- **Performance improvements**:
+    - Maybe filter documents by topic. Right now, all documents are being compared.
+    - There is a lot to improve about processing speed. A possible solution is to use a `Celery` task queue to process
+      documents in the background, as using `spaCy` is CPU intensive.
+    - Better response management. Right now, if a document is being processed, the API will return a `202 Accepted`
+      response, but it is impossible to know any errors that may occur during processing. It's only possible to know
+      when the process is finished by checking the logs. Or if by retrieving its ID it doesn't return a `404 Not Found`.
+- **Interesting Topics**: their definition was more related to what were the assignment requirements.
+- **Internet scrapping**: It was not implemented due to time constraints. It would be a great addition to the system.
+  Also, it would relative easy to implement: an `Adapter` capable of scrapping the web and returning an `Assignment`
+  will do the job.
+- **Batch Processing**
+- **Title Identification**: Only file names are used to identify documents. More NLP domain knowledge is needed to
+  identify titles.
+- **Better Author recognition**: Right now is using the first *identified* name. Some documents don't include authors
+  name, others aren't their name first mentioned. Sometimes another token is wrongly recognized as a `PER` token.
+- **Requirements Identification**: Requirements are being considered as plagiarism. A better approach would be to
+  identify them and exclude them from the comparison like for each topic have a list of requirements and exclude them.
 
 ## Recommended Readings
 
