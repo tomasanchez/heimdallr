@@ -103,7 +103,15 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
         # create an assignment from a file
         entry = self.reader.read(file=command.file)
 
+        logger.info(
+            "Read Assignment(id=%s, author=%s, topic=%s)",
+            str(command.id),
+            entry.author,
+            str(entry.topic),
+        )
+
         if not entry.content:
+            logger.warning("Assignment %s is empty.", str(command.id))
             return AssignmentVerified(id=command.id, author=entry.author)
 
         entry.id = command.id
@@ -112,6 +120,7 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
 
         # using concurrent.futures to parallelize the comparisons
         if self.detect_plagiarism:
+            logger.info("Comparing against %d assignments. This may take a while...", len(assignments))
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [executor.submit(self.compare_assignments, assignment, entry) for assignment in assignments]
 
@@ -128,7 +137,7 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
 
         persisted = await self.repository.save(entry)
 
-        logger.info("Assignment %s verified.", str(persisted.id))
+        logger.info("Assignment(id=%s) verified.", str(persisted.id))
 
         return AssignmentVerified(
             id=persisted.id,
@@ -163,10 +172,11 @@ class SpacyAssignmentVerifier(AssignmentVerifier):
             return AssignmentCompared(id=assignment.id, author=assignment.author, plagiarism=1.0)
 
         logger.info(
-            "Similar(%f) to Assignment(id=%s, author=%s)",
+            "Similar(%f) to Assignment(id=%s, author=%s, topic=%s)",
             similarity,
             str(assignment.id),
             assignment.author,
+            str(assignment.topic),
         )
 
         comparison_results: set[SentenceCompared] = set()

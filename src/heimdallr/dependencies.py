@@ -1,6 +1,7 @@
 """
 Dependencies for Heimdallr.
 """
+import logging
 import os
 from typing import Annotated
 
@@ -24,6 +25,8 @@ from heimdallr.service_layer.assignment_verifier import (
 )
 from heimdallr.settings.api_settings import ApplicationSettings
 from heimdallr.settings.mongo_settings import MongoSettings
+
+logger = logging.getLogger("uvicorn.error")
 
 NLP_SPANISH = "es_core_news_lg"
 
@@ -83,11 +86,14 @@ def get_topic_predictor(natural_language_processor: NLPDependency) -> TopicPredi
     if topic_predictor is None:
         model_path = ApplicationSettings().MODEL_PATH
         if os.path.exists(model_path):
+            logger.info("Loading model from %s.", model_path)
             topic_predictor = SklearnTopicPredictor(
                 nlp=natural_language_processor,
                 download=True,
                 model_path=model_path,
             )
+        else:
+            logger.warning("Model not found at %s.", model_path)
 
     return topic_predictor
 
