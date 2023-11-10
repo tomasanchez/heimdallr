@@ -22,6 +22,11 @@ build: ## Creates a virtual environment and installs development dependencies
 	poetry install
 	poetry run spacy download es_core_news_lg
 
+.PHONY: deploy
+deploy: build ## Build the application, trains the model and migrates the database
+	poetry run python -m heimdallr.train
+	poetry run python -m heimdallr.db.migration
+
 .PHONY: test
 test: ## Executes tests cases
 	poetry run pytest
