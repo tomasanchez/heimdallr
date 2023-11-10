@@ -24,7 +24,7 @@ class MongoSettings(BaseSettings):
     """
 
     CLIENT: str = "mongodb://localhost:27017"
-    DATABASE: str = "heimdallr-dev"
+    DATABASE: str = "heimdallr-local"
     USER: str | None = None
     PASSWORD: str | None = None
 
